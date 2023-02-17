@@ -2,14 +2,6 @@ from truedata_ws.websocket.TD import TD
 import logging
 from datetime import datetime as dt
 
-"""username = 'tdwsp353'
-password = 'anjan@353'
-realtime_port = 8082
-url = 'push.truedata.in'
-TDConnection = TD(username, password, live_port=realtime_port, url=url, log_level=logging.WARNING, log_format="%(message)s")
-req_ids = TDConnection.start_live_data(['BANKNIFTY-I'])  # ["BANKNIFTY-I"]
-time.sleep(1)
-"""
 
 class TDConnection:
     connection_status = False
