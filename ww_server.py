@@ -84,7 +84,7 @@ def connect():
             api_response['message'] = "Invalid format."
             status = 400
         elif TDConnection.connection_status is False:
-            # TDConnection('tdwsp353', 'anjan@353', 8082, 'push.truedata.in').connect()
+         
             TDConnection(username=username, password=password, realtime_port=port, url=url).connect()
             TDConnection.connection_status = True
             api_response['message'] = "Connected to Wealthwisers' Server."
