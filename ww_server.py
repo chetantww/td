@@ -158,6 +158,6 @@ def gettickdata():
 def getod():
     return make_response(jsonify(TDConnection.get_option_chain_data()), 200)
 
-
+"""
 if __name__ == '__main__':
-    app.run(host='http://127.0.0.1', port=5000, debug=True, threaded=True)
+    app.run(host='http://127.0.0.1', port=5000, debug=True, threaded=True)"""
