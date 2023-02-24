@@ -7,7 +7,7 @@ url = "http://13.126.151.25/"
 wwd = FData(key='trial', base_url=url)
 
 login = wwd.login()
-connect = wwd.connect_to_server(username=username, password=password, realtime_port=8082, td_url='push.truedata.in')
+connect = wwd.connect_to_server(username=username, password=password, realtime_port=8082, url='push.truedata.in')
 ticksym = wwd.add_tick_symbols(['BANKNIFTY-I'])
 
 """pprint.pprint(login)
@@ -26,7 +26,7 @@ def strategy(data_var):
 
 
 """s = 'BHARTIARTL-I'
-print(pandas.DataFrame.from_records(wwd.get_historical(s)).to_csv(f"{s}_20230222.csv"))"""
+pandas.DataFrame.from_records(wwd.get_historical(s)).to_csv(f"{s}_20230222.csv")"""
 
 
 # Method 1
@@ -61,33 +61,11 @@ def another_function(data_var):
     return f"********{data_var}********"
 
 
-'''
-while True:
-    data = wwd.get_tick_data()
-    result = strategy2(data)
-    print(f"Further processing for Result by the strategy 2. -> {result}")
-    result2 = another_function(result)
-    print(f"Another Function's processing. {result2}")
-    time.sleep(1)
 
 
-'''
-
-
-def new_strat():
-    data = {}
-    wwd.calculate_candles(1, symbol='BANKNIFTY-I', increment=data)
-    if len(data) > 1:
-        print("New Strat -> ", data)
-    else:
-        print("No data")
 
 
 # print(wwd.get_historical('BANKNIFTY-I', df=True,duration=5))
-# wwd.calculate_candles(1, symbol='BANKNIFTY-I', increment=data)
-
-
-# new_strat()
 
 wwd.calculate_candles(1)
 starting_point = len(wwd.candles)
