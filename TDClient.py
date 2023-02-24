@@ -127,7 +127,7 @@ class FData:
             print("Check format of your input.")
 
     @staticmethod
-    def cal_candles_base(interval=1, symbol=None, fakeServer=False):
+    def cal_candles_base(interval=1, symbol=None, fakeServer=False, strategy_function=None):
         returning_data = {}
         slp = .1
         symbols = FData.all_symbols
@@ -153,7 +153,6 @@ class FData:
             candle_start_time = NN  # DL
             data = FData.get_tick_data()
         while True:
-
             if fakeServer is False:
                 data = FData.get_tick_data()
             for key in symbols:
@@ -185,24 +184,38 @@ class FData:
                         symbols.remove(key)
                         break
                     timestamp_ = candle_start_time.strftime(timestamp_format)
+
                     returning_data[key] = {'Timestamp': timestamp_, 'Open': open_,
                                            'High': high_,
                                            'Low': low_, 'Close': close_}
-                    FData.candles[timestamp_] = {'Symbol': key, 'Open': open_,
-                                                 'High': high_,
-                                                 'Low': low_, 'Close': close_}
+                    FData.candles[key] = {'Timestamp': timestamp_, 'Open': open_,
+                                          'High': high_,
+                                          'Low': low_, 'Close': close_}
+                    if strategy_function is None:
+                        FData.candles[key] = {'Timestamp': timestamp_, 'Open': open_,
+                                              'High': high_,
+                                              'Low': low_, 'Close': close_}
                     current_dict[key].clear()
                     if next_candle_time.second == current_ltp_time.second:
                         current_dict[key].append(data[key]['ltp'])
                     # print(returning_data)
                 else:
                     print(f"Waiting for the minute to end: {current_ltp_time}")
-                if current_ltp_time.hour == 15 and current_ltp_time.minute == 30:
+                if current_ltp_time.hour >= 15 and current_ltp_time.minute > 30:
                     return "Market Over"
             if fakeServer is True:  # DLT
                 NN = NN + timedelta(seconds=1)
+            if callable(strategy_function) is True and len(returning_data) > 0:
+                strategy_function(returning_data)
+                returning_data = {}
+
             time.sleep(slp)
 
-    def calculate_candles(self, interval=1, symbol=None, fakeServer=False):
-        thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
-        thread.start()
+    def calculate_candles(self, interval=1, symbol=None, fakeServer=False, strategy_function=None):
+        if fakeServer is True:
+            self.cal_candles_base(strategy_function=strategy_function, interval=interval, symbol=symbol, fakeServer=fakeServer)
+        else:
+            if callable(strategy_function) is False:
+                thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
+                #thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
+                thread.start()
