@@ -61,16 +61,25 @@ def another_function(data_var):
     return f"********{data_var}********"
 
 
-
-
-
-
-# print(wwd.get_historical('BANKNIFTY-I', df=True,duration=5))
-
-wwd.calculate_candles(1)
-starting_point = len(wwd.candles)
+'''
 while True:
-    if len(wwd.candles) > starting_point:
-        print("wwd.candles -> ", wwd.candles)
-        wwd.candles = {}
-        starting_point += 1
+    data = wwd.get_tick_data()
+    result = strategy2(data)
+    print(f"Further processing for Result by the strategy 2. -> {result}")
+    result2 = another_function(result)
+    print(f"Another Function's processing. {result2}")
+    time.sleep(1)
+
+
+'''
+
+"""print(wwd.get_historical('BANKNIFTY-I', df=True,duration=1))"""
+
+cursor = 1
+def strategy_for_candle(data):
+    global cursor
+    print(f"{cursor}. Received data -> ", data)
+    cursor += 1
+
+
+wwd.calculate_candles(strategy_function=strategy_for_candle, interval=1, symbol='BANKNIFTY-I', fakeServer=True)
