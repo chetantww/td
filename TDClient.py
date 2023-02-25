@@ -141,7 +141,12 @@ class FData:
             if symbol is None:
                 symbol = 'BANKNIFTY-I'
                 input("No symbol was provided, to proceed with BANKNIFTY press any key.\n")
-            df = FData.get_historical(symbol, df=True)
+            try:
+                df = FData.get_historical(symbol, df=True)
+                df['time']
+            except KeyError:
+                print("Exception Occurred, trying again with duration=2")
+                df = FData.get_historical(symbol, df=True, duration=2)
             df['time'] = pandas.to_datetime(df['time'], format='%a, %d %b %Y %H:%M:%S %Z')
             df['time'] = df['time'].dt.strftime(timestamp_format)
             df['time'] = pandas.to_datetime(df['time'], format=timestamp_format)
