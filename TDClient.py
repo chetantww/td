@@ -145,8 +145,10 @@ class FData:
                 df = FData.get_historical(symbol, df=True)
                 df['time']
             except KeyError:
-                print("Exception Occurred, trying again with duration=2")
-                df = FData.get_historical(symbol, df=True, duration=2)
+                duration = int(input(
+                    "Exception Occurred, Seems like market has been closed since yesterday, "
+                    "please enter the number of days you want to go back:\n"))
+                df = FData.get_historical(symbol, df=True, duration=duration)
             df['time'] = pandas.to_datetime(df['time'], format='%a, %d %b %Y %H:%M:%S %Z')
             df['time'] = df['time'].dt.strftime(timestamp_format)
             df['time'] = pandas.to_datetime(df['time'], format=timestamp_format)
@@ -218,9 +220,10 @@ class FData:
 
     def calculate_candles(self, interval=1, symbol=None, fakeServer=False, strategy_function=None):
         if fakeServer is True:
-            self.cal_candles_base(strategy_function=strategy_function, interval=interval, symbol=symbol, fakeServer=fakeServer)
+            self.cal_candles_base(strategy_function=strategy_function, interval=interval, symbol=symbol,
+                                  fakeServer=fakeServer)
         else:
             if callable(strategy_function) is False:
                 thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
-                #thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
+                # thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
                 thread.start()
