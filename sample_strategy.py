@@ -4,33 +4,30 @@ from TDClient import FData
 from creds import *
 
 url = "http://13.126.151.25/"
-wwd = FData(key='trial', base_url=url)
+fdata_object = FData(key='trial', base_url=url)
 
-login = wwd.login()
-connect = wwd.connect_to_server(username=username, password=password, realtime_port=8082, url='push.truedata.in')
-ticksym = wwd.add_tick_symbols(['BANKNIFTY-I'])
+login = fdata_object.login()
+connect = fdata_object.connect_to_server(username=username, password=password, realtime_port=8082,
+                                         url='push.truedata.in')
+ticksym = fdata_object.add_tick_symbols(['BANKNIFTY-I'])
 
 """pprint.pprint(login)
 pprint.pprint(connect)
 pprint.pprint(ticksym)
-pprint.pprint(wwd.disconnect_from_server())"""
+pprint.pprint(fdata_object.disconnect_from_server())"""
 
 
-# pprint.pprint(wwd.get_tick_data())
+# pprint.pprint(fdata_object.get_tick_data())
 
 
-# @wwd.get_tick_data
+# @fdata_object.get_tick_data
 def strategy(data_var):
     # print(data_var)
     time.sleep(1)
 
 
-"""s = 'BHARTIARTL-I'
-pandas.DataFrame.from_records(wwd.get_historical(s)).to_csv(f"{s}_20230222.csv")"""
-
-
 # Method 1
-# @wwd.get_tick_data
+# @fdata_object.get_tick_data
 def strategy(data_var):
     ltp = data_var['BANKNIFTY-I']['ltp']
     profit_amount, loss_amount = '', ''
@@ -63,7 +60,7 @@ def another_function(data_var):
 
 '''
 while True:
-    data = wwd.get_tick_data()
+    data = fdata_object.get_tick_data()
     result = strategy2(data)
     print(f"Further processing for Result by the strategy 2. -> {result}")
     result2 = another_function(result)
@@ -73,13 +70,27 @@ while True:
 
 '''
 
-"""print(wwd.get_historical('BANKNIFTY-I', df=True,duration=1))"""
+"""print(fdata_object.get_historical('BANKNIFTY-I', df=True,duration=1))"""
 
 cursor = 1
+
+
 def strategy_for_candle(data):
     global cursor
     print(f"{cursor}. Received data -> ", data)
     cursor += 1
+    time.sleep(4)
 
 
-wwd.calculate_candles(strategy_function=strategy_for_candle, interval=1, symbol='BANKNIFTY-I', fakeServer=True)
+def strt(data):
+    data = data['BANKNIFTY-I']
+    o = data['Open']
+    h = data['High']
+    l = data['Low']
+    c = data['Close']
+    # print(f"open-> {o}, high-> {h}, low-> {l}, close-> {c}")
+    print(f"Difference in open and close is: {abs(c - o)}")
+    # print(data)
+
+
+fdata_object.calculate_candles(strategy_function=strategy_for_candle, interval=1, symbol='BANKNIFTY-I', fakeServer=True)
