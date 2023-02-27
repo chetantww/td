@@ -9,6 +9,7 @@ fdata_object = FData(key='trial', base_url=url)
 login = fdata_object.login()
 connect = fdata_object.connect_to_server(username=username, password=password, realtime_port=8082,
                                          url='push.truedata.in')
+
 ticksym = fdata_object.add_tick_symbols(['BANKNIFTY-I'])
 
 """pprint.pprint(login)
@@ -93,4 +94,4 @@ def strt(data):
     # print(data)
 
 
-fdata_object.calculate_candles(strategy_function=strategy_for_candle, interval=1, symbol='BANKNIFTY-I', fakeServer=True)
+fdata_object.calculate_candles(strategy_function=strategy_for_candle, interval=1, symbol='BANKNIFTY-I', fakeServer=False)
