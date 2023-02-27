@@ -162,6 +162,7 @@ class FData:
         while True:
             if fakeServer is False:
                 data = FData.get_tick_data()
+
             for key in symbols:
                 if fakeServer is True:  # DLT
                     data[key]['timestamp'] = NN.strftime(timestamp_format)  # DLT
@@ -191,7 +192,6 @@ class FData:
                         symbols.remove(key)
                         break
                     timestamp_ = candle_start_time.strftime(timestamp_format)
-
                     returning_data[key] = {'Timestamp': timestamp_, 'Open': open_,
                                            'High': high_,
                                            'Low': low_, 'Close': close_}
@@ -205,7 +205,6 @@ class FData:
                     current_dict[key].clear()
                     if next_candle_time.second == current_ltp_time.second:
                         current_dict[key].append(data[key]['ltp'])
-                    # print(returning_data)
                 else:
                     print(f"Waiting for the minute to end: {current_ltp_time}")
                 if current_ltp_time.hour >= 15 and current_ltp_time.minute > 30:
@@ -215,7 +214,10 @@ class FData:
             if callable(strategy_function) is True and len(returning_data) > 0:
                 strategy_function(returning_data)
                 returning_data = {}
-
+                """marker = True
+                if marker is True:
+                    returning_data = {}
+                    marker = False"""
             time.sleep(slp)
 
     def calculate_candles(self, interval=1, symbol=None, fakeServer=False, strategy_function=None):
@@ -223,7 +225,10 @@ class FData:
             self.cal_candles_base(strategy_function=strategy_function, interval=interval, symbol=symbol,
                                   fakeServer=fakeServer)
         else:
-            if callable(strategy_function) is False:
-                thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
-                # thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
-                thread.start()
+            thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
+            thread.start()
+            while True:
+                if len(FData.candles) > 0:
+                    # print(FData.candles)
+                    strategy_function(FData.candles)
+                    FData.candles = {}
