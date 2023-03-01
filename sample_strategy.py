@@ -4,27 +4,35 @@ from TDClient import FData
 from creds import *
 
 url = "http://13.126.151.25/"
-fdata_object = FData(key='trial', base_url=url)
+n_url = "http://13.232.116.35/"
 
+fdata_object = FData(key='trial', base_url=url)
 login = fdata_object.login()
+"""fdata_object.headers['key'] = 'AdMiN@#wWeAlThWiSeRs'
+fdata_object.disconnect_from_server()"""
 connect = fdata_object.connect_to_server(username=username, password=password, realtime_port=8082,
                                          url='push.truedata.in')
-
 ticksym = fdata_object.add_tick_symbols(['BANKNIFTY-I'])
+"""fdata_object.add_option_symbols('BANKNIFTY', 2023, 3, 30)
+fdata_object.add_option_symbols('TCS', 2023, 3, 30)
+fdata_object.add_option_symbols('RELIANCE', 2023, 3, 30)
+fdata_object.add_option_symbols('HDFC', 2023, 3, 30)
+fdata_object.add_option_symbols('HDFCBANK', 2023, 3, 30)"""
 
 """pprint.pprint(login)
 pprint.pprint(connect)
 pprint.pprint(ticksym)
 pprint.pprint(fdata_object.disconnect_from_server())"""
 
-
 # pprint.pprint(fdata_object.get_tick_data())
 
 
-# @fdata_object.get_tick_data
+"""@fdata_object.get_oc_data
 def strategy(data_var):
-    # print(data_var)
-    time.sleep(1)
+    # print(pandas.DataFrame.from_dict(data_var['BANKNIFTY202332']).to_csv('oc.csv'))
+    print(data_var.keys())
+    time.sleep(10)
+    print(data_var)"""
 
 
 # Method 1
@@ -71,16 +79,16 @@ while True:
 
 '''
 
-"""print(fdata_object.get_historical('BANKNIFTY-I', df=True,duration=1))"""
+print(fdata_object.get_historical('BANKNIFTY-I', df=True))
 
 cursor = 1
 
 
 def strategy_for_candle(data):
     global cursor
-    print(f"{cursor}. Received data -> ", data)
+    print(f"{cursor}. Received data -> ", data["BANKNIFTY-I"])
     cursor += 1
-    time.sleep(4)
+    time.sleep(1)
 
 
 def strt(data):
@@ -94,4 +102,5 @@ def strt(data):
     # print(data)
 
 
-fdata_object.calculate_candles(strategy_function=strategy_for_candle, interval=1, symbol='BANKNIFTY-I', fakeServer=False)
+#fdata_object.calculate_candles(strategy_function=strategy_for_candle, interval=3)
+print(fdata_object.candle(interval=3, dtype='df'))
