@@ -7,6 +7,21 @@ import pandas
 import requests
 
 
+def make_candle(df, interval, dtype):
+    timestamp_format = '%Y-%m-%d %H:%M:%S'
+    assert isinstance(interval, int), "Interval must be an integer"
+    d = {'o': 'first', 'h': 'max', 'l': 'min', 'c': 'last', 'v': 'sum'}
+    df['time'] = pandas.to_datetime(df['time'], format='%a, %d %b %Y %H:%M:%S %Z')
+    df['time'] = df['time'].dt.strftime(timestamp_format)
+    df['time'] = pandas.to_datetime(df['time'], format=timestamp_format)
+    df.sort_values('time', inplace=True)
+    ddf = df.resample(f'{interval}T', on='time').agg(d)
+    if dtype == 'dict':
+        return ddf.to_dict()
+    if dtype == 'df':
+        return ddf
+
+
 def abcd(NN, df):
     z = NN.second
     NN = NN.replace(second=0)
@@ -51,7 +66,8 @@ class FData:
         return response
 
     def disconnect_from_server(self):
-        response = requests.post(self.base_url + '/disconnect', headers=self.headers)
+        # self.headers['key'] =
+        response = requests.post(self.base_url + '/disconnectt', headers=self.headers)
 
     def add_tick_symbols(self, symbols):
         if isinstance(symbols, list):
@@ -107,21 +123,25 @@ class FData:
             duration = None
         start, end = None, None
         jsn = {'Duration': duration, 'End': end, 'Start': start}
+        if isinstance(sym, str):
+            sym = [sym]
         if isinstance(sym, list):
-            response = {s: requests.get(FData.base_url + '/histdata', headers=FData.headers,
-                                        json=jsn.update({'Symbol': s})).json()
-                        for s in
-                        sym}
+            response = {}
+            for s in sym:
+                jsn['Symbol'] = s
+                resp = requests.get(FData.base_url + '/histdata', headers=FData.headers,
+                                    json=jsn)
+                response[s] = resp.json()
             if df is True:
                 return {x: pandas.DataFrame.from_records(y) for x, y in response.items()}
             return response
-        elif isinstance(sym, str):
-            jsn['Symbol'] = sym
-            response = requests.get(FData.base_url + '/histdata', headers=FData.headers,
-                                    json=jsn)
-            if df is True:
-                return pandas.DataFrame.from_records(response.json())
-            return response.json()
+            """elif isinstance(sym, str):
+                jsn['Symbol'] = sym
+                response = requests.get(FData.base_url + '/histdata', headers=FData.headers,
+                                        json=jsn)
+                if df is True:
+                    return pandas.DataFrame.from_records(response.json())
+                return response.json()"""
 
         else:
             print("Check format of your input.")
@@ -162,15 +182,15 @@ class FData:
         while True:
             if fakeServer is False:
                 data = FData.get_tick_data()
-
             for key in symbols:
                 if fakeServer is True:  # DLT
                     data[key]['timestamp'] = NN.strftime(timestamp_format)  # DLT
                     data[key]['ltp'] = abcd(NN, df)
                 if data[key]['timestamp'] is None:
-                    print("Timestamp is None")
+                    print("Timestamp is None, because market is closed.")
                     break
                 current_ltp_time = datetime.strptime(data[key]['timestamp'], timestamp_format)
+                # print("Current LTP Time: ", current_ltp_time)
                 if candle_start_time.minute != current_ltp_time.minute and next_candle_time.minute != current_ltp_time.minute:
                     current_dict[key].append(data[key]['ltp'])
                     if next_candle_marker is False:
@@ -190,6 +210,7 @@ class FData:
                         print("TypeError occurred")
                         del current_dict[key]
                         symbols.remove(key)
+                        FData.all_symbols.remove(key)
                         break
                     timestamp_ = candle_start_time.strftime(timestamp_format)
                     returning_data[key] = {'Timestamp': timestamp_, 'Open': open_,
@@ -202,6 +223,7 @@ class FData:
                         FData.candles[key] = {'Timestamp': timestamp_, 'Open': open_,
                                               'High': high_,
                                               'Low': low_, 'Close': close_}
+
                     current_dict[key].clear()
                     if next_candle_time.second == current_ltp_time.second:
                         current_dict[key].append(data[key]['ltp'])
@@ -209,6 +231,9 @@ class FData:
                     print(f"Waiting for the minute to end: {current_ltp_time}")
                 if current_ltp_time.hour >= 15 and current_ltp_time.minute > 30:
                     return "Market Over"
+            if len(FData.candles) > 0:
+                print(FData.candles, "FData.all_symbols-> ", FData.all_symbols)
+                print("returning_data-> ", returning_data)
             if fakeServer is True:  # DLT
                 NN = NN + timedelta(seconds=1)
             if callable(strategy_function) is True and len(returning_data) > 0:
@@ -228,7 +253,20 @@ class FData:
             thread = threading.Thread(target=self.cal_candles_base, args=(interval, symbol, fakeServer))
             thread.start()
             while True:
-                if len(FData.candles) > 0:
+                if len(FData.candles) == len(FData.all_symbols):
                     # print(FData.candles)
                     strategy_function(FData.candles)
-                    FData.candles = {}
+                    # FData.candles = {}
+
+    def candle(self, sym=None, interval=1, dtype='df'):
+        returning_data = {}
+        if sym == None:
+            sym = list(self.all_symbols)
+        res = FData.get_historical(sym, df=True)
+        if isinstance(res, dict):
+
+            for x in res:
+                returning_data[x] = make_candle(res[x], interval, dtype)
+        if isinstance(res, pandas.DataFrame):
+            returning_data[sym] = make_candle(res, interval, dtype)
+        return returning_data
