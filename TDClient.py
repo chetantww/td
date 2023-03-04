@@ -10,7 +10,7 @@ import requests
 def make_candle(df, interval, dtype):
     timestamp_format = '%Y-%m-%d %H:%M:%S'
     assert isinstance(interval, int), "Interval must be an integer"
-    d = {'o': 'first', 'h': 'max', 'l': 'min', 'c': 'last', 'v': 'sum'}
+    d = {'o': 'first', 'h': 'max', 'l': 'timmeframe', 'c': 'last', 'v': 'sum'}
     df['time'] = pandas.to_datetime(df['time'], format='%a, %d %b %Y %H:%M:%S %Z')
     df['time'] = df['time'].dt.strftime(timestamp_format)
     df['time'] = pandas.to_datetime(df['time'], format=timestamp_format)
@@ -121,7 +121,7 @@ class FData:
     def get_historical(sym, start=None, end=None, duration=None, df=False):
         if not isinstance(duration, int):
             duration = None
-        start, end = None, None
+        '''start, end = None, None'''
         jsn = {'Duration': duration, 'End': end, 'Start': start}
         if isinstance(sym, str):
             sym = [sym]
@@ -135,14 +135,6 @@ class FData:
             if df is True:
                 return {x: pandas.DataFrame.from_records(y) for x, y in response.items()}
             return response
-            """elif isinstance(sym, str):
-                jsn['Symbol'] = sym
-                response = requests.get(FData.base_url + '/histdata', headers=FData.headers,
-                                        json=jsn)
-                if df is True:
-                    return pandas.DataFrame.from_records(response.json())
-                return response.json()"""
-
         else:
             print("Check format of your input.")
 
@@ -260,13 +252,38 @@ class FData:
 
     def candle(self, sym=None, interval=1, dtype='df'):
         returning_data = {}
-        if sym == None:
+        if sym is None:
             sym = list(self.all_symbols)
         res = FData.get_historical(sym, df=True)
         if isinstance(res, dict):
-
             for x in res:
                 returning_data[x] = make_candle(res[x], interval, dtype)
+                returning_data[x].reset_index(inplace=True)
         if isinstance(res, pandas.DataFrame):
             returning_data[sym] = make_candle(res, interval, dtype)
         return returning_data
+
+    @staticmethod
+    def get_candles(passed_func=None):
+        while True:
+            try:
+                data = requests.get(FData.base_url + '/gettickdata', headers=FData.headers)
+                tick_data = data.json()
+                filtered_data = {sym_dict['symbol']: sym_dict for sym_dict in tick_data if
+                                 sym_dict['symbol'] in FData.all_symbols}
+                if passed_func == None:
+                    return filtered_data
+                passed_func(filtered_data)
+            except requests.exceptions.JSONDecodeError as e:
+                print("Json Error Occurred")
+            except TypeError:
+                print(f"Type error occurred, this is the Tickdata-> {tick_data}")
+                raise Exception
+
+    def get_last_candles(self, sym, interval=1, size=5):
+        jsn = {}
+        jsn['Symbol'] = sym
+        jsn['Size'] = size
+        jsn['interval'] = interval
+        data = requests.get(FData.base_url + '/dta', headers=FData.headers, json=jsn)
+        return data.json()
