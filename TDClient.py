@@ -10,7 +10,7 @@ import requests
 def make_candle(df, interval, dtype):
     timestamp_format = '%Y-%m-%d %H:%M:%S'
     assert isinstance(interval, int), "Interval must be an integer"
-    d = {'o': 'first', 'h': 'max', 'l': 'timmeframe', 'c': 'last', 'v': 'sum'}
+    d = {'o': 'first', 'h': 'max', 'l': 'min', 'c': 'last', 'v': 'sum'}
     df['time'] = pandas.to_datetime(df['time'], format='%a, %d %b %Y %H:%M:%S %Z')
     df['time'] = df['time'].dt.strftime(timestamp_format)
     df['time'] = pandas.to_datetime(df['time'], format=timestamp_format)
@@ -257,6 +257,7 @@ class FData:
         res = FData.get_historical(sym, df=True)
         if isinstance(res, dict):
             for x in res:
+                #print(x, len(res[x]))
                 returning_data[x] = make_candle(res[x], interval, dtype)
                 returning_data[x].reset_index(inplace=True)
         if isinstance(res, pandas.DataFrame):
@@ -280,10 +281,22 @@ class FData:
                 print(f"Type error occurred, this is the Tickdata-> {tick_data}")
                 raise Exception
 
-    def get_last_candles(self, sym, interval=1, size=5):
+    def get_last_candles(self, sym=None, interval=1, size=5):
+        returning_data = {}
         jsn = {}
-        jsn['Symbol'] = sym
         jsn['Size'] = size
         jsn['interval'] = interval
-        data = requests.get(FData.base_url + '/dta', headers=FData.headers, json=jsn)
-        return data.json()
+        if sym is None:
+            sym = list(self.all_symbols)
+        if isinstance(sym, list):
+            for x in sym:
+                jsn['Symbol'] = x
+                data = requests.get(FData.base_url + '/dta', headers=FData.headers, json=jsn)
+                data = data.json()[0]
+                data['time'] = datetime.strptime(data['time'], '%a, %d %b %Y %H:%M:%S %Z').strftime("%Y-%m-%d %H:%M:%S")
+                returning_data[x] = data
+        else:
+            jsn['Symbol'] = sym
+            data = requests.get(FData.base_url + '/dta', headers=FData.headers, json=jsn)
+            returning_data[sym] = data.json()[0]
+        return returning_data
